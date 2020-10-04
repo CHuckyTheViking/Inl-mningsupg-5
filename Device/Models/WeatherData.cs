@@ -10,7 +10,7 @@ namespace Device.Models
     }
     public class Current
     {
-        public int temperature { get; set; }
-        public int humidity { get; set; }
+        public int Temperature { get; set; }
+        public int Humidity { get; set; }
     }
 }

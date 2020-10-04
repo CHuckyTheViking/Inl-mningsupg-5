@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Device
 {
-    class Program
+    class Device
     {
         private static DeviceClient deviceClient = DeviceClient.CreateFromConnectionString("HostName=WIN20-iothub.azure-devices.net;DeviceId=DeviceApp;SharedAccessKey=Qtj9zuTHh1aF95Fa+4LY/5k7rTwXJiysCvGVGbnulL4=", TransportType.Mqtt);
 
@@ -19,7 +19,7 @@ namespace Device
 
         static void Main(string[] args)
         {
-            //Service.InvokeMethod("DeviceApp", "RemoteMessageInterval", "10").GetAwaiter();
+           
             deviceClient.SetMethodHandlerAsync("RemoteMessageInterval", RemoteMessageInterval, null);
 
             SendMessageAsync().GetAwaiter();
@@ -40,8 +40,8 @@ namespace Device
                         WeatherData weather = JsonConvert.DeserializeObject<WeatherData>(await response.Content.ReadAsStringAsync());
                         var data = new Current
                         {
-                            temperature = weather.current.temperature,
-                            humidity = weather.current.humidity
+                            Temperature = weather.current.Temperature,
+                            Humidity = weather.current.Humidity
                         };
 
                         var json = JsonConvert.SerializeObject(data);
@@ -62,16 +62,23 @@ namespace Device
 
         public static Task<MethodResponse> RemoteMessageInterval(MethodRequest request, object userContext)
         {
-
-
             var payload = Encoding.UTF8.GetString(request.Data).Replace("\"", "");
 
             if (Int32.TryParse(payload, out remoteInterval))
             {
-                Console.WriteLine($"Interval set remotely to: {remoteInterval} seconds.");
+                if (remoteInterval == 0)
+                {
+                    var json = "{\"result\": \"You can't set it to 0 seconds..\"}";
+                    remoteInterval = 5;
+                    return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(json), 418));
+                }
+                else
+                {
+                    Console.WriteLine($"Interval set remotely to: {remoteInterval} seconds.");
 
-                var json = "{\"result\": \"The direct method: " + request.Name + ", was executed properly\"}";
-                return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(json), 200));
+                    var json = "{\"result\": \"The direct method: " + request.Name + ", was executed properly\"}";
+                    return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(json), 200));
+                }
             }
             else
             {
@@ -79,9 +86,6 @@ namespace Device
                 return Task.FromResult(new MethodResponse(Encoding.UTF8.GetBytes(json), 501));
 
             }
-
-
-
         }
     }
 }

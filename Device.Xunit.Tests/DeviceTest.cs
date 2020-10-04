@@ -21,24 +21,23 @@ namespace Device.Xunit.Tests
 
             expected = true;
             _client = new HttpClient();
-            //_connweather = "http://api.weatherstack.com/current?access_key=e699857f79960f12fc50911e6203d374&query=koping";
             response = await _client.GetAsync(_connweather);
 
             Assert.Equal(response.IsSuccessStatusCode, expected);
         }
 
 
-        public class Current
-        {
-            public int temperature { get; set; }
-            public int humidity { get; set; }
-        }
         public class WeatherData
         {
             public Current current { get; set; }
         }
+        public class Current
+        {
+            public int Temperature { get; set; }
+            public int Humidity { get; set; }
+        }
+        
         dynamic data;
-
 
         [Fact]
         public async Task Should_GetWeatherData()
@@ -48,34 +47,18 @@ namespace Device.Xunit.Tests
             WeatherData weather = JsonConvert.DeserializeObject<WeatherData>(await response.Content.ReadAsStringAsync());
             data = new Current
             {
-                temperature = weather.current.temperature,
-                humidity = weather.current.humidity
+                Temperature = weather.current.Temperature,
+                Humidity = weather.current.Humidity
             };
 
-            if (weather.current.temperature > 1)
+            //Kollar ifall Temperature och Humidity har fått ett värde
+            if (weather.current.Temperature > 1)
             {
-                Assert.True(true);
+                if (weather.current.Humidity > 1)
+                {
+                    Assert.True(true);
+                }
             }
-        }
-
-        private dynamic json;
-        private Message payload;
-        DeviceClient deviceClient = DeviceClient.CreateFromConnectionString("HostName=WIN20-iothub.azure-devices.net;DeviceId=DeviceApp;SharedAccessKey=Qtj9zuTHh1aF95Fa+4LY/5k7rTwXJiysCvGVGbnulL4=", TransportType.Mqtt);
-
-        [Fact]
-        public async Task Should_SendWeatherData()
-        {
-
-            json = JsonConvert.SerializeObject(data);
-
-            payload = new Message(Encoding.UTF8.GetBytes(json));
-
-            await deviceClient.SendEventAsync(payload);
-
-            await Task.Delay(5000);
-
-            Assert.NotNull(payload);
-
         }
 
 
@@ -84,7 +67,7 @@ namespace Device.Xunit.Tests
         [Theory]
         [InlineData(4, "4", 4)]
         [InlineData(3, "3", 3)]
-        [InlineData(10, "10", 10)]
+        [InlineData(10, "8", 10)] // Failar med flit för att se så den fungerar korrekt.
         public void Should_SetRemoteMessageInterval(int expected, string payload, int remoteInterval)
         {
             if (Int32.TryParse(payload, out remoteInterval))
